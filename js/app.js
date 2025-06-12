@@ -110,14 +110,11 @@ function showHomePage() {
     if (!state.currentUser) {
         document.getElementById('get-started').addEventListener('click', window.showRegistrationForm);
     } else {
-        document.getElementById('create-event').addEventListener('click', showCreateEventForm);
+        document.getElementById('create-event').addEventListener('click', window.showCreateEventForm);
     }
 }
 
-// Placeholder function for create event form
-function showCreateEventForm() {
-    ApiService.showNotification('Info', 'Create event functionality coming soon!', 'info');
-}
+// showCreateEventForm is now implemented in events.js
 
 // More functions would be implemented here...
 

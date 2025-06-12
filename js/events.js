@@ -234,6 +234,125 @@ function assignActivityLeader(eventId, activityId, leaderId) {
     // Implementation would go here
 }
 
+// Show create event form
+function showCreateEventForm() {
+    mainContent.innerHTML = `
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Create New Event</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="create-event-form">
+                            <div class="mb-3">
+                                <label for="event-name" class="form-label">Event Name *</label>
+                                <input type="text" class="form-control" id="event-name" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="event-description" class="form-label">Description</label>
+                                <textarea class="form-control" id="event-description" rows="3"
+                                    placeholder="Optional description of the event"></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="start-date" class="form-label">Start Date *</label>
+                                        <input type="date" class="form-control" id="start-date" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="end-date" class="form-label">End Date *</label>
+                                        <input type="date" class="form-control" id="end-date" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <small>
+                                    <i class="bi bi-info-circle"></i>
+                                    The event can span multiple days. Activities can be scheduled on any day within this range.
+                                </small>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" id="cancel-create-event">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Create Event</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start-date').min = today;
+    document.getElementById('end-date').min = today;
+
+    // Update end date minimum when start date changes
+    document.getElementById('start-date').addEventListener('change', function() {
+        const startDate = this.value;
+        const endDateInput = document.getElementById('end-date');
+        endDateInput.min = startDate;
+
+        // If end date is before start date, update it
+        if (endDateInput.value && endDateInput.value < startDate) {
+            endDateInput.value = startDate;
+        }
+    });
+
+    // Cancel button
+    document.getElementById('cancel-create-event').addEventListener('click', () => {
+        showEventsPage();
+    });
+
+    // Form submission
+    document.getElementById('create-event-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('event-name').value.trim();
+        const description = document.getElementById('event-description').value.trim();
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+
+        // Validation
+        if (!name) {
+            ApiService.showNotification('Error', 'Event name is required', 'error');
+            return;
+        }
+
+        if (!startDate || !endDate) {
+            ApiService.showNotification('Error', 'Both start and end dates are required', 'error');
+            return;
+        }
+
+        if (new Date(endDate) < new Date(startDate)) {
+            ApiService.showNotification('Error', 'End date cannot be before start date', 'error');
+            return;
+        }
+
+        try {
+            const eventData = {
+                name: name,
+                description: description,
+                start_date: startDate,
+                end_date: endDate
+            };
+
+            const newEvent = await ApiService.createEvent(eventData);
+            ApiService.showNotification('Success', 'Event created successfully!', 'success');
+            showEventDetails(newEvent.id);
+        } catch (error) {
+            // Error is already handled by the API service
+        }
+    });
+}
+
 // Record activity score
 function recordScore(eventId, activityId, scoreData) {
     // Implementation would go here
@@ -242,3 +361,4 @@ function recordScore(eventId, activityId, scoreData) {
 // Ensure functions are available globally
 window.showEventsPage = showEventsPage;
 window.showEventDetails = showEventDetails;
+window.showCreateEventForm = showCreateEventForm;
