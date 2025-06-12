@@ -154,9 +154,19 @@ async function showEventDetails(eventId) {
             </div>
         `;
         
+        // Add event listeners for creator actions
         if (event.creator_id == (state.currentUser?.id || 0)) {
             document.getElementById('add-activity').addEventListener('click', () => showAddActivityForm(eventId));
+
+            // Add edit event listener
+            const editButton = document.getElementById('edit-event');
+            if (editButton) {
+                editButton.addEventListener('click', () => showEditEventForm(eventId));
+            }
         }
+
+        // Back to events button
+        document.getElementById('back-to-events').addEventListener('click', showEventsPage);
     } catch (error) {
         console.error('Error fetching event details:', error);
         ApiService.showNotification('Error', 'Failed to load event details', 'error');
@@ -353,6 +363,145 @@ function showCreateEventForm() {
     });
 }
 
+// Show edit event form
+async function showEditEventForm(eventId) {
+    try {
+        // Fetch current event data
+        const event = await ApiService.getEvent(eventId);
+
+        mainContent.innerHTML = `
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Edit Event</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="edit-event-form">
+                                <div class="mb-3">
+                                    <label for="edit-event-name" class="form-label">Event Name *</label>
+                                    <input type="text" class="form-control" id="edit-event-name"
+                                           value="${event.name}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="edit-event-description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="edit-event-description" rows="3"
+                                        placeholder="Optional description of the event">${event.description || ''}</textarea>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="edit-start-date" class="form-label">Start Date *</label>
+                                            <input type="date" class="form-control" id="edit-start-date"
+                                                   value="${event.start_date}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="edit-end-date" class="form-label">End Date *</label>
+                                            <input type="date" class="form-control" id="edit-end-date"
+                                                   value="${event.end_date}" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-warning">
+                                    <small>
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Changing dates may affect existing activities scheduled for this event.
+                                    </small>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-secondary" id="cancel-edit-event">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Update Event</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Set minimum date to today for future events, or keep original date for past events
+        const today = new Date().toISOString().split('T')[0];
+        const startDateInput = document.getElementById('edit-start-date');
+        const endDateInput = document.getElementById('edit-end-date');
+
+        // Only restrict dates if the event hasn't started yet
+        if (event.start_date >= today) {
+            startDateInput.min = today;
+        }
+
+        // Update end date minimum when start date changes
+        startDateInput.addEventListener('change', function() {
+            const startDate = this.value;
+            endDateInput.min = startDate;
+
+            // If end date is before start date, update it
+            if (endDateInput.value && endDateInput.value < startDate) {
+                endDateInput.value = startDate;
+            }
+        });
+
+        // Set initial minimum for end date
+        endDateInput.min = startDateInput.value;
+
+        // Cancel button
+        document.getElementById('cancel-edit-event').addEventListener('click', () => {
+            showEventDetails(eventId);
+        });
+
+        // Form submission
+        document.getElementById('edit-event-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('edit-event-name').value.trim();
+            const description = document.getElementById('edit-event-description').value.trim();
+            const startDate = document.getElementById('edit-start-date').value;
+            const endDate = document.getElementById('edit-end-date').value;
+
+            // Validation
+            if (!name) {
+                ApiService.showNotification('Error', 'Event name is required', 'error');
+                return;
+            }
+
+            if (!startDate || !endDate) {
+                ApiService.showNotification('Error', 'Both start and end dates are required', 'error');
+                return;
+            }
+
+            if (new Date(endDate) < new Date(startDate)) {
+                ApiService.showNotification('Error', 'End date cannot be before start date', 'error');
+                return;
+            }
+
+            try {
+                const eventData = {
+                    name: name,
+                    description: description,
+                    start_date: startDate,
+                    end_date: endDate
+                };
+
+                await ApiService.updateEvent(eventId, eventData);
+                ApiService.showNotification('Success', 'Event updated successfully!', 'success');
+                showEventDetails(eventId);
+            } catch (error) {
+                // Error is already handled by the API service
+            }
+        });
+
+    } catch (error) {
+        console.error('Error loading event for editing:', error);
+        ApiService.showNotification('Error', 'Failed to load event details', 'error');
+        showEventsPage();
+    }
+}
+
 // Record activity score
 function recordScore(eventId, activityId, scoreData) {
     // Implementation would go here
@@ -362,3 +511,4 @@ function recordScore(eventId, activityId, scoreData) {
 window.showEventsPage = showEventsPage;
 window.showEventDetails = showEventDetails;
 window.showCreateEventForm = showCreateEventForm;
+window.showEditEventForm = showEditEventForm;
