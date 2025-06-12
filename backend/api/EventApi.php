@@ -88,9 +88,26 @@ class EventApi extends BaseApi {
         
         $activities = [];
         while ($activity = $activitiesResult->fetch_assoc()) {
+            // Get score categories for this activity
+            $categoryStmt = $this->conn->prepare("
+                SELECT *
+                FROM score_categories
+                WHERE activity_id = ?
+                ORDER BY name
+            ");
+            $categoryStmt->bind_param("i", $activity['id']);
+            $categoryStmt->execute();
+            $categoriesResult = $categoryStmt->get_result();
+
+            $categories = [];
+            while ($category = $categoriesResult->fetch_assoc()) {
+                $categories[] = $category;
+            }
+
+            $activity['score_categories'] = $categories;
             $activities[] = $activity;
         }
-        
+
         $event['activities'] = $activities;
         
         $this->sendResponse($event);

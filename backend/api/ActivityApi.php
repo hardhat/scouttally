@@ -82,11 +82,30 @@ class ActivityApi extends BaseApi {
         if (!$this->validateRequiredParams(['event_id', 'name', 'activity_date'])) {
             return;
         }
-        
+
         $eventId = $this->params['event_id'];
         $name = $this->params['name'];
         $description = $this->params['description'] ?? '';
         $activityDate = $this->params['activity_date'];
+
+        // Check if user is authorized (creator of the event)
+        $stmt = $this->conn->prepare("SELECT creator_id FROM events WHERE id = ?");
+        $stmt->bind_param("i", $eventId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 0) {
+            $this->sendError("Event not found", 404);
+            return;
+        }
+
+        $event = $result->fetch_assoc();
+        $currentUserId = $this->getCurrentUserId();
+
+        if ($event['creator_id'] != $currentUserId) {
+            $this->sendError("Not authorized to add activities to this event", 403);
+            return;
+        }
         
         $stmt = $this->conn->prepare("
             INSERT INTO activities (event_id, name, description, activity_date) 
@@ -96,6 +115,25 @@ class ActivityApi extends BaseApi {
         
         if ($stmt->execute()) {
             $activityId = $this->conn->insert_id;
+
+            // Handle score categories if provided
+            if (isset($this->params['score_categories']) && is_array($this->params['score_categories'])) {
+                foreach ($this->params['score_categories'] as $category) {
+                    if (isset($category['name']) && isset($category['max_score'])) {
+                        $categoryName = $category['name'];
+                        $maxScore = intval($category['max_score']);
+                        $weight = isset($category['weight']) ? floatval($category['weight']) : 1.0;
+
+                        $categoryStmt = $this->conn->prepare("
+                            INSERT INTO score_categories (activity_id, name, max_score, weight)
+                            VALUES (?, ?, ?, ?)
+                        ");
+                        $categoryStmt->bind_param("isid", $activityId, $categoryName, $maxScore, $weight);
+                        $categoryStmt->execute();
+                    }
+                }
+            }
+
             $this->sendResponse([
                 'id' => $activityId,
                 'event_id' => $eventId,

@@ -144,8 +144,12 @@ async function showEventDetails(eventId) {
                             <div class="card-body">
                                 <h5 class="card-title">${activity.name}</h5>
                                 <p class="card-text">${activity.description || 'No description'}</p>
-                                <p class="card-text">Date: ${new Date(activity.date).toLocaleDateString()}</p>
-                                <p class="card-text">Score Categories: ${activity.score_categories.join(', ') || 'None'}</p>
+                                <p class="card-text">Date: ${new Date(activity.activity_date).toLocaleDateString()}</p>
+                                <p class="card-text">Score Categories: ${
+                                    activity.score_categories && activity.score_categories.length > 0
+                                        ? activity.score_categories.map(cat => `${cat.name} (${cat.max_score} pts)`).join(', ')
+                                        : 'None defined'
+                                }</p>
                             </div>
                         </div>
                     `).join('')
