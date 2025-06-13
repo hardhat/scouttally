@@ -13,19 +13,18 @@ async function fetchEvents() {
 // Show events page
 async function showEventsPage() {
     mainContent.innerHTML = `
-        <h2 class="mb-4">Events</h2>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-calendar-event me-2"></i>Events</h2>
+            ${state.currentUser ? '<button class="btn btn-primary" id="create-event-btn"><i class="bi bi-plus-circle me-2"></i>Create New Event</button>' : ''}
+        </div>
         <div class="row" id="events-container">
             <div class="col-12 text-center">
-                <div class="spinner-border" role="status">
+                <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
+                <p class="mt-2 text-muted"><i class="bi bi-hourglass-split me-1"></i>Loading events...</p>
             </div>
         </div>
-        ${state.currentUser ? 
-            `<div class="mt-4">
-                <button class="btn btn-primary" id="create-event-btn">Create New Event</button>
-            </div>` : ''
-        }
     `;
     
     if (state.currentUser) {
@@ -40,6 +39,7 @@ async function showEventsPage() {
             eventsContainer.innerHTML = `
                 <div class="col-12">
                     <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
                         No events found. ${state.currentUser ? 'Create your first event!' : 'Please login to create events.'}
                     </div>
                 </div>
@@ -51,17 +51,22 @@ async function showEventsPage() {
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card event-card h-100">
                     <div class="card-body">
-                        <h5 class="card-title">${event.name}</h5>
+                        <h5 class="card-title"><i class="bi bi-calendar-event me-2"></i>${event.name}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">
-                            ${new Date(event.start_date).toLocaleDateString()} - 
+                            <i class="bi bi-calendar-range me-1"></i>
+                            ${new Date(event.start_date).toLocaleDateString()} -
                             ${new Date(event.end_date).toLocaleDateString()}
                         </h6>
-                        <p class="card-text">${event.description || 'No description'}</p>
+                        <p class="card-text"><i class="bi bi-card-text me-1"></i>${event.description || 'No description'}</p>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-sm btn-primary view-event" data-id="${event.id}">View Details</button>
-                        ${event.creator_id == (state.currentUser?.id || 0) ? 
-                            `<button class="btn btn-sm btn-outline-danger delete-event float-end" data-id="${event.id}">Delete</button>` : ''
+                        <button class="btn btn-sm btn-primary view-event" data-id="${event.id}">
+                            <i class="bi bi-eye me-1"></i>View Details
+                        </button>
+                        ${event.creator_id == (state.currentUser?.id || 0) ?
+                            `<button class="btn btn-sm btn-outline-danger delete-event float-end" data-id="${event.id}">
+                                <i class="bi bi-trash me-1"></i>Delete
+                            </button>` : ''
                         }
                     </div>
                 </div>
@@ -111,30 +116,34 @@ async function showEventDetails(eventId) {
         mainContent.innerHTML = `
             <div class="mb-4">
                 <button class="btn btn-outline-secondary btn-sm" id="back-to-events">
-                    &larr; Back to Events
+                    <i class="bi bi-arrow-left me-1"></i>Back to Events
                 </button>
             </div>
-            
+
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">${event.name}</h3>
-                    ${event.creator_id == (state.currentUser?.id || 0) ? 
-                        `<button class="btn btn-sm btn-outline-primary" id="edit-event">Edit Event</button>` : ''
+                    <h3 class="mb-0"><i class="bi bi-calendar-event me-2"></i>${event.name}</h3>
+                    ${event.creator_id == (state.currentUser?.id || 0) ?
+                        `<button class="btn btn-sm btn-outline-primary" id="edit-event">
+                            <i class="bi bi-pencil me-1"></i>Edit Event
+                        </button>` : ''
                     }
                 </div>
                 <div class="card-body">
                     <p class="text-muted">
-                        Created by: ${event.creator_name}<br>
-                        Dates: ${new Date(event.start_date).toLocaleDateString()} - 
+                        <i class="bi bi-person me-1"></i>Created by: ${event.creator_name}<br>
+                        <i class="bi bi-calendar-range me-1"></i>Dates: ${new Date(event.start_date).toLocaleDateString()} -
                         ${new Date(event.end_date).toLocaleDateString()}
                     </p>
-                    <p>${event.description || 'No description'}</p>
+                    <p><i class="bi bi-card-text me-1"></i>${event.description || 'No description'}</p>
                 </div>
             </div>
-            
-            <h4 class="mb-3">Activities</h4>
-            ${event.creator_id == (state.currentUser?.id || 0) ? 
-                `<button class="btn btn-primary mb-3" id="add-activity">Add Activity</button>` : ''
+
+            <h4 class="mb-3"><i class="bi bi-list-task me-2"></i>Activities</h4>
+            ${event.creator_id == (state.currentUser?.id || 0) ?
+                `<button class="btn btn-primary mb-3" id="add-activity">
+                    <i class="bi bi-plus-circle me-2"></i>Add Activity
+                </button>` : ''
             }
             
             <div id="activities-container">
@@ -142,10 +151,10 @@ async function showEventDetails(eventId) {
                     ? event.activities.map(activity => `
                         <div class="card mb-3">
                             <div class="card-body">
-                                <h5 class="card-title">${activity.name}</h5>
-                                <p class="card-text">${activity.description || 'No description'}</p>
-                                <p class="card-text">Date: ${new Date(activity.activity_date).toLocaleDateString()}</p>
-                                <p class="card-text">Score Categories: ${
+                                <h5 class="card-title"><i class="bi bi-clipboard-check me-2"></i>${activity.name}</h5>
+                                <p class="card-text"><i class="bi bi-card-text me-1"></i>${activity.description || 'No description'}</p>
+                                <p class="card-text"><i class="bi bi-calendar-date me-1"></i>Date: ${new Date(activity.activity_date).toLocaleDateString()}</p>
+                                <p class="card-text"><i class="bi bi-award me-1"></i>Score Categories: ${
                                     activity.score_categories && activity.score_categories.length > 0
                                         ? activity.score_categories.map(cat => `${cat.name} (${cat.max_score} pts)`).join(', ')
                                         : 'None defined'
@@ -153,7 +162,7 @@ async function showEventDetails(eventId) {
                             </div>
                         </div>
                     `).join('')
-                    : '<div class="alert alert-info">No activities found. Add your first activity!</div>'
+                    : '<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No activities found. Add your first activity!</div>'
                 }
             </div>
         `;
@@ -255,32 +264,44 @@ function showCreateEventForm() {
             <div class="col-md-8 col-lg-6">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Create New Event</h3>
+                        <h3 class="card-title"><i class="bi bi-plus-circle me-2"></i>Create New Event</h3>
                     </div>
                     <div class="card-body">
                         <form id="create-event-form">
                             <div class="mb-3">
-                                <label for="event-name" class="form-label">Event Name *</label>
-                                <input type="text" class="form-control" id="event-name" required>
+                                <label for="event-name" class="form-label"><i class="bi bi-calendar-event me-1"></i>Event Name *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                                    <input type="text" class="form-control" id="event-name" required placeholder="Enter event name">
+                                </div>
                             </div>
 
                             <div class="mb-3">
-                                <label for="event-description" class="form-label">Description</label>
-                                <textarea class="form-control" id="event-description" rows="3"
-                                    placeholder="Optional description of the event"></textarea>
+                                <label for="event-description" class="form-label"><i class="bi bi-card-text me-1"></i>Description</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+                                    <textarea class="form-control" id="event-description" rows="3"
+                                        placeholder="Optional description of the event"></textarea>
+                                </div>
                             </div>
 
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="start-date" class="form-label">Start Date *</label>
-                                        <input type="date" class="form-control" id="start-date" required>
+                                        <label for="start-date" class="form-label"><i class="bi bi-calendar-date me-1"></i>Start Date *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-calendar-date"></i></span>
+                                            <input type="date" class="form-control" id="start-date" required>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="end-date" class="form-label">End Date *</label>
-                                        <input type="date" class="form-control" id="end-date" required>
+                                        <label for="end-date" class="form-label"><i class="bi bi-calendar-check me-1"></i>End Date *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+                                            <input type="date" class="form-control" id="end-date" required>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -293,8 +314,12 @@ function showCreateEventForm() {
                             </div>
 
                             <div class="d-flex justify-content-between">
-                                <button type="button" class="btn btn-secondary" id="cancel-create-event">Cancel</button>
-                                <button type="submit" class="btn btn-primary">Create Event</button>
+                                <button type="button" class="btn btn-secondary" id="cancel-create-event">
+                                    <i class="bi bi-x-circle me-1"></i>Cancel
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>Create Event
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -378,7 +403,7 @@ async function showEditEventForm(eventId) {
                 <div class="col-md-8 col-lg-6">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Edit Event</h3>
+                            <h3 class="card-title"><i class="bi bi-pencil me-2"></i>Edit Event</h3>
                         </div>
                         <div class="card-body">
                             <form id="edit-event-form">
@@ -419,8 +444,12 @@ async function showEditEventForm(eventId) {
                                 </div>
 
                                 <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-secondary" id="cancel-edit-event">Cancel</button>
-                                    <button type="submit" class="btn btn-primary">Update Event</button>
+                                    <button type="button" class="btn btn-secondary" id="cancel-edit-event">
+                                        <i class="bi bi-x-circle me-1"></i>Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle me-1"></i>Update Event
+                                    </button>
                                 </div>
                             </form>
                         </div>

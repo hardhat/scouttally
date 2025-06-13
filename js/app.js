@@ -84,11 +84,11 @@ function updateNavigation(isLoggedIn) {
     loginLink.parentNode.replaceChild(newLoginLink, loginLink);
 
     if (isLoggedIn) {
-        newLoginLink.textContent = 'Logout';
+        newLoginLink.innerHTML = '<i class="bi bi-box-arrow-right me-1"></i>Logout';
         newLoginLink.addEventListener('click', window.logout);
         registerLink.style.display = 'none';
     } else {
-        newLoginLink.textContent = 'Login';
+        newLoginLink.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i>Login';
         newLoginLink.addEventListener('click', window.showLoginForm);
         registerLink.style.display = 'block';
     }
@@ -98,11 +98,15 @@ function updateNavigation(isLoggedIn) {
 function showHomePage() {
     mainContent.innerHTML = `
         <div class="jumbotron">
-            <h1>Welcome to EventScore</h1>
-            <p>Create and manage multi-day events with scored activities</p>
-            ${!state.currentUser ? 
-                `<button class="btn btn-primary" id="get-started">Get Started</button>` : 
-                `<button class="btn btn-success" id="create-event">Create New Event</button>`
+            <h1><i class="bi bi-trophy-fill text-warning me-3"></i>Welcome to EventScore</h1>
+            <p class="lead"><i class="bi bi-calendar-check me-2"></i>Create and manage multi-day events with scored activities</p>
+            ${!state.currentUser ?
+                `<button class="btn btn-primary btn-lg" id="get-started">
+                    <i class="bi bi-rocket-takeoff me-2"></i>Get Started
+                </button>` :
+                `<button class="btn btn-success btn-lg" id="create-event">
+                    <i class="bi bi-plus-circle me-2"></i>Create New Event
+                </button>`
             }
         </div>
     `;

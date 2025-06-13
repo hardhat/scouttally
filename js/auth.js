@@ -44,25 +44,33 @@ function showLoginForm() {
             <div class="col-md-6 col-lg-4">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Login</h3>
+                        <h3 class="card-title"><i class="bi bi-box-arrow-in-right me-2"></i>Login</h3>
                     </div>
                     <div class="card-body">
                         <form id="login-form">
                             <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" required>
+                                <label for="email" class="form-label"><i class="bi bi-envelope me-1"></i>Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" class="form-control" id="email" required placeholder="Enter your email">
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" required>
+                                <label for="password" class="form-label"><i class="bi bi-lock me-1"></i>Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" required placeholder="Enter your password">
+                                </div>
                             </div>
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Login</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                                </button>
                             </div>
                         </form>
                     </div>
                     <div class="card-footer text-center">
-                        <p class="mb-0">Don't have an account? <a href="#" id="show-register">Register</a></p>
+                        <p class="mb-0">Don't have an account? <a href="#" id="show-register"><i class="bi bi-person-plus me-1"></i>Register</a></p>
                     </div>
                 </div>
             </div>
@@ -94,33 +102,47 @@ function showRegistrationForm() {
             <div class="col-md-6 col-lg-4">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Register</h3>
+                        <h3 class="card-title"><i class="bi bi-person-plus me-2"></i>Register</h3>
                     </div>
                     <div class="card-body">
                         <form id="register-form">
                             <div class="mb-3">
-                                <label for="name" class="form-label">Name</label>
-                                <input type="text" class="form-control" id="name" required>
+                                <label for="name" class="form-label"><i class="bi bi-person me-1"></i>Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <input type="text" class="form-control" id="name" required placeholder="Enter your full name">
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" required>
+                                <label for="email" class="form-label"><i class="bi bi-envelope me-1"></i>Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" class="form-control" id="email" required placeholder="Enter your email">
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" required>
+                                <label for="password" class="form-label"><i class="bi bi-lock me-1"></i>Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" required placeholder="Create a password">
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label for="confirm-password" class="form-label">Confirm Password</label>
-                                <input type="password" class="form-control" id="confirm-password" required>
+                                <label for="confirm-password" class="form-label"><i class="bi bi-lock-fill me-1"></i>Confirm Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                    <input type="password" class="form-control" id="confirm-password" required placeholder="Confirm your password">
+                                </div>
                             </div>
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Register</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-person-plus me-2"></i>Register
+                                </button>
                             </div>
                         </form>
                     </div>
                     <div class="card-footer text-center">
-                        <p class="mb-0">Already have an account? <a href="#" id="show-login">Login</a></p>
+                        <p class="mb-0">Already have an account? <a href="#" id="show-login"><i class="bi bi-box-arrow-in-right me-1"></i>Login</a></p>
                     </div>
                 </div>
             </div>

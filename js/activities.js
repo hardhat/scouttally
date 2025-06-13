@@ -9,34 +9,43 @@ async function showAddActivityForm(eventId) {
                 <div class="col-md-8 col-lg-6">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Add Activity</h3>
-                            <p class="mb-0 text-muted">Event: ${event.name}</p>
+                            <h3 class="card-title"><i class="bi bi-plus-circle me-2"></i>Add Activity</h3>
+                            <p class="mb-0 text-muted"><i class="bi bi-calendar-event me-1"></i>Event: ${event.name}</p>
                         </div>
                         <div class="card-body">
                             <form id="add-activity-form">
                                 <div class="mb-3">
-                                    <label for="activity-name" class="form-label">Activity Name *</label>
-                                    <input type="text" class="form-control" id="activity-name" required
-                                           placeholder="e.g., Knot Tying, First Aid Challenge">
+                                    <label for="activity-name" class="form-label"><i class="bi bi-clipboard-check me-1"></i>Activity Name *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-clipboard-check"></i></span>
+                                        <input type="text" class="form-control" id="activity-name" required
+                                               placeholder="e.g., Knot Tying, First Aid Challenge">
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="activity-description" class="form-label">Description</label>
-                                    <textarea class="form-control" id="activity-description" rows="3"
-                                        placeholder="Describe the activity, rules, or objectives"></textarea>
+                                    <label for="activity-description" class="form-label"><i class="bi bi-card-text me-1"></i>Description</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+                                        <textarea class="form-control" id="activity-description" rows="3"
+                                            placeholder="Describe the activity, rules, or objectives"></textarea>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="activity-date" class="form-label">Activity Date *</label>
-                                    <input type="date" class="form-control" id="activity-date" required>
+                                    <label for="activity-date" class="form-label"><i class="bi bi-calendar-date me-1"></i>Activity Date *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-calendar-date"></i></span>
+                                        <input type="date" class="form-control" id="activity-date" required>
+                                    </div>
                                     <div class="form-text">
-                                        Must be between ${new Date(event.start_date).toLocaleDateString()}
+                                        <i class="bi bi-info-circle me-1"></i>Must be between ${new Date(event.start_date).toLocaleDateString()}
                                         and ${new Date(event.end_date).toLocaleDateString()}
                                     </div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Score Categories</label>
+                                    <label class="form-label"><i class="bi bi-award me-1"></i>Score Categories</label>
                                     <div id="score-categories">
                                         <div class="score-category-item mb-2">
                                             <div class="row">
@@ -56,7 +65,7 @@ async function showAddActivityForm(eventId) {
                                         </div>
                                     </div>
                                     <button type="button" class="btn btn-outline-primary btn-sm" id="add-category">
-                                        + Add Score Category
+                                        <i class="bi bi-plus-circle me-1"></i>Add Score Category
                                     </button>
                                     <div class="form-text">
                                         Define how this activity will be scored (e.g., Speed: 10 points, Accuracy: 15 points)
@@ -64,8 +73,12 @@ async function showAddActivityForm(eventId) {
                                 </div>
 
                                 <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-secondary" id="cancel-add-activity">Cancel</button>
-                                    <button type="submit" class="btn btn-primary">Add Activity</button>
+                                    <button type="button" class="btn btn-secondary" id="cancel-add-activity">
+                                        <i class="bi bi-x-circle me-1"></i>Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle me-1"></i>Add Activity
+                                    </button>
                                 </div>
                             </form>
                         </div>
