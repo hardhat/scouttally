@@ -6,6 +6,26 @@ const state = {
     activities: []
 };
 
+// Avatar color palette - using a set of pleasant, distinct colors
+const avatarColors = [
+    '#4CAF50', '#2196F3', '#9C27B0', '#FF9800', '#E91E63',
+    '#00BCD4', '#673AB7', '#FF5722', '#3F51B5', '#009688'
+];
+
+// Helper function to get initials from name
+function getInitials(name) {
+    return name.split(' ')
+        .map(part => part[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+}
+
+// Helper function to get avatar color based on user ID
+function getAvatarColor(userId) {
+    return avatarColors[userId % avatarColors.length];
+}
+
 // DOM elements
 const mainContent = document.getElementById('main-content');
 
@@ -67,10 +87,15 @@ function init() {
         updateNavigation(false);
     }
 
-    // Load initial data (don't wait for it to complete)
-    fetchEvents().catch(error => {
-        console.error('Error loading initial events:', error);
-    });
+    // Only fetch events if user is logged in
+    if (state.currentUser) {
+        fetchEvents().catch(error => {
+            // Only show error if it's not a session expired error
+            if (!error.message.includes('Session expired')) {
+                console.error('Error loading initial events:', error);
+            }
+        });
+    }
     showHomePage();
 }
 
@@ -83,8 +108,19 @@ function updateNavigation(isLoggedIn) {
     const newLoginLink = loginLink.cloneNode(true);
     loginLink.parentNode.replaceChild(newLoginLink, loginLink);
 
-    if (isLoggedIn) {
-        newLoginLink.innerHTML = '<i class="bi bi-box-arrow-right me-1"></i>Logout';
+    if (isLoggedIn && state.currentUser) {
+        // Create user info with avatar
+        const initials = getInitials(state.currentUser.name);
+        const avatarColor = getAvatarColor(state.currentUser.id);
+        
+        newLoginLink.innerHTML = `
+            <span class="nav-user-info">
+                <span class="user-avatar" style="background-color: ${avatarColor}">
+                    ${initials}
+                </span>
+                <i class="bi bi-box-arrow-right me-1"></i>Logout
+            </span>
+        `;
         newLoginLink.addEventListener('click', window.logout);
         registerLink.style.display = 'none';
     } else {

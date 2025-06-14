@@ -3,7 +3,17 @@ require_once 'BaseApi.php';
 
 class ActivityApi extends BaseApi {
     public function processRequest() {
-        if (!$this->isAuthorized()) {
+        $requiresAuth = false;
+        
+        // Check if this request requires authentication
+        if ($this->requestMethod !== 'GET') {
+            $requiresAuth = true;
+        } elseif (isset($this->params['id'])) {
+            // GET requests for specific activities require authorization if they're not public
+            $requiresAuth = !$this->canViewActivity($this->params['id']);
+        }
+        
+        if ($requiresAuth && !$this->isAuthorized()) {
             $this->sendError("Unauthorized", 401);
             return;
         }
@@ -40,12 +50,26 @@ class ActivityApi extends BaseApi {
     }
     
     private function getActivity($id) {
-        // Get activity details
+        // Check if the user has permission to view the activity
+        if (!$this->canViewActivity($id)) {
+            $this->sendError("Unauthorized to view this activity", 403);
+            return;
+        }
+
+        // Get activity details with event info and leader info
         $stmt = $this->conn->prepare("
-            SELECT a.*, e.name as event_name 
+            SELECT a.*, 
+                   e.name as event_name,
+                   e.start_date as event_start_date,
+                   e.end_date as event_end_date,
+                   GROUP_CONCAT(DISTINCT CONCAT(u.name) SEPARATOR ', ') as leader_names,
+                   COUNT(DISTINCT al.id) as leader_count
             FROM activities a 
             JOIN events e ON a.event_id = e.id 
+            LEFT JOIN activity_leaders al ON a.id = al.activity_id
+            LEFT JOIN users u ON al.user_id = u.id
             WHERE a.id = ?
+            GROUP BY a.id
         ");
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -74,6 +98,44 @@ class ActivityApi extends BaseApi {
         }
         
         $activity['score_categories'] = $categories;
+
+        // Get activity leaders
+        $stmt = $this->conn->prepare("
+            SELECT al.*, u.name, u.email
+            FROM activity_leaders al
+            JOIN users u ON al.user_id = u.id
+            WHERE al.activity_id = ?
+        ");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $leadersResult = $stmt->get_result();
+        
+        $leaders = [];
+        while ($leader = $leadersResult->fetch_assoc()) {
+            $leaders[] = [
+                'id' => $leader['id'],
+                'user_id' => $leader['user_id'],
+                'name' => $leader['name'],
+                'email' => $leader['email']
+            ];
+        }
+        
+        $activity['leaders'] = $leaders;
+        
+        // Include event information needed for edit form
+        $activity['event'] = [
+            'id' => $activity['event_id'],
+            'name' => $activity['event_name'],
+            'start_date' => $activity['event_start_date'],
+            'end_date' => $activity['event_end_date']
+        ];
+        
+        // Clean up redundant fields
+        unset($activity['event_name']);
+        unset($activity['event_start_date']);
+        unset($activity['event_end_date']);
+        unset($activity['leader_names']);
+        unset($activity['leader_count']);
         
         $this->sendResponse($activity);
     }
@@ -236,6 +298,35 @@ class ActivityApi extends BaseApi {
         } else {
             $this->sendError("Database error: " . $this->conn->error, 500);
         }
+    }
+    
+    private function canViewActivity($id) {
+        // For now, all activities are public
+        // In the future, you might want to check if:
+        // 1. The user is the event creator
+        // 2. The user is an activity leader
+        // 3. The event is public/private
+        return true;
+    }
+
+    private function canManageActivity($id) {
+        // Check if user is the event creator
+        $stmt = $this->conn->prepare("
+            SELECT e.creator_id 
+            FROM activities a 
+            JOIN events e ON a.event_id = e.id 
+            WHERE a.id = ?
+        ");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            return false;
+        }
+
+        $row = $result->fetch_assoc();
+        return $this->getCurrentUserId() === $row['creator_id'];
     }
 }
 ?>

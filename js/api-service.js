@@ -10,21 +10,82 @@ const ApiService = {
     },
     
     // Set auth headers
-    getHeaders() {
+    getHeaders(endpoint) {
         const headers = {
             'Content-Type': 'application/json'
         };
         
-        const token = this.getToken();
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+        // Only add auth header for endpoints that require it
+        if (this.requiresAuth(endpoint)) {
+            const token = this.getToken();
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
         }
         
         return headers;
     },
     
+    // List of endpoints that don't require authentication
+    noAuthEndpoints: ['user.php'],
+
+    // Check if endpoint requires authentication
+    requiresAuth(endpoint) {
+        // Check if the endpoint is in the noAuthEndpoints list
+        const isNoAuthEndpoint = this.noAuthEndpoints.some(noAuthPath => endpoint.startsWith(noAuthPath));
+        
+        // If it's a user.php endpoint, check if it's a login or register action
+        if (isNoAuthEndpoint && endpoint.startsWith('user.php')) {
+            const params = new URLSearchParams(endpoint.split('?')[1]);
+            const action = params.get('action');
+            return !(action === 'login' || action === 'register');
+        }
+        
+        return !isNoAuthEndpoint;
+    },
+
+    // Check if token is expired
+    isTokenExpired() {
+        const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+        if (!user || !user.token) return true;
+
+        try {
+            const tokenParts = atob(user.token).split('.');
+            if (tokenParts.length !== 2) return true;
+
+            const payload = JSON.parse(tokenParts[0]);
+            return !payload.expires_at || payload.expires_at < Math.floor(Date.now() / 1000);
+        } catch (error) {
+            console.error('Error checking token expiration:', error);
+            return true;
+        }
+    },
+
+    // Handle expired token
+    handleExpiredToken() {
+        sessionStorage.removeItem('currentUser');
+        // Only redirect to login if we're not already on login/register page and this isn't a login/register request
+        const isAuthPage = window.location.hash === '#login' || window.location.hash === '#register';
+        if (!isAuthPage) {
+            window.location.href = '/#login';
+            this.showNotification('Session Expired', 'Please log in again.', 'warning');
+        }
+    },
+
     // Generic fetch method with error handling
     async fetchApi(endpoint, method = 'GET', data = null) {
+        // For POST requests to user endpoints (login/register), skip token check
+        const isAuthEndpoint = endpoint === 'user.php' && method === 'POST' && 
+            data && ['login', 'register'].includes(data.action);
+
+        // Only check token expiration for endpoints that require authentication
+        if (!isAuthEndpoint && this.requiresAuth(endpoint)) {
+            if (this.isTokenExpired()) {
+                this.handleExpiredToken();
+                throw new Error('Session expired');
+            }
+        }
+
         // Show loading spinner
         document.getElementById('loading-spinner').classList.remove('d-none');
         
@@ -32,7 +93,7 @@ const ApiService = {
             const url = `${this.baseUrl}/${endpoint}`;
             const options = {
                 method,
-                headers: this.getHeaders()
+                headers: this.getHeaders(endpoint)
             };
             
             if (data && (method === 'POST' || method === 'PUT')) {
@@ -43,11 +104,17 @@ const ApiService = {
             const result = await response.json();
             
             if (!response.ok) {
+                console.error('API Error:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    result
+                });
                 throw new Error(result.error || 'An error occurred');
             }
             
             return result;
         } catch (error) {
+            console.error('Request Error:', error);
             this.showNotification('Error', error.message, 'error');
             throw error;
         } finally {

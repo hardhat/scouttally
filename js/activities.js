@@ -316,8 +316,8 @@ async function showAddActivityForm(eventId) {
 async function showEditActivityForm(activityId) {
     try {
         const activity = await ApiService.getActivity(activityId);
-        const event = await ApiService.getEvent(activity.event_id);
-        const currentLeaders = await ApiService.getActivityLeaders(activityId);
+        const event = activity.event; // Event info is now included in activity response
+        const currentLeaders = activity.leaders; // Leaders are now included in activity response
 
         mainContent.innerHTML = `
             <div class="row justify-content-center">

@@ -74,12 +74,16 @@ class EventApi extends BaseApi {
         
         $event = $result->fetch_assoc();
         
-        // Get activities
+        // Get activities with their leaders
         $stmt = $this->conn->prepare("
             SELECT a.*, 
-                   (SELECT COUNT(*) FROM activity_leaders al WHERE al.activity_id = a.id) as leader_count
+                   GROUP_CONCAT(DISTINCT CONCAT(u.name) SEPARATOR ', ') as leader_names,
+                   COUNT(DISTINCT al.id) as leader_count
             FROM activities a 
+            LEFT JOIN activity_leaders al ON a.id = al.activity_id
+            LEFT JOIN users u ON al.user_id = u.id
             WHERE a.event_id = ?
+            GROUP BY a.id
             ORDER BY a.activity_date
         ");
         $stmt->bind_param("i", $id);
@@ -99,11 +103,20 @@ class EventApi extends BaseApi {
             $categoryStmt->execute();
             $categoriesResult = $categoryStmt->get_result();
 
-            $categories = [];
-            while ($category = $categoriesResult->fetch_assoc()) {
+            $categories = [];            while ($category = $categoriesResult->fetch_assoc()) {
                 $categories[] = $category;
             }
-
+            
+            // Parse leader names into an array if they exist
+            if (!empty($activity['leader_names'])) {
+                $activity['leaders'] = array_map(function($name) {
+                    return ['name' => trim($name)];
+                }, explode(',', $activity['leader_names']));
+            } else {
+                $activity['leaders'] = [];
+            }
+            unset($activity['leader_names']); // Remove the concatenated string
+            
             $activity['score_categories'] = $categories;
             $activities[] = $activity;
         }
