@@ -151,9 +151,21 @@ async function showEventDetails(eventId) {
                     ? event.activities.map(activity => `
                         <div class="card mb-3">
                             <div class="card-body">
-                                <h5 class="card-title"><i class="bi bi-clipboard-check me-2"></i>${activity.name}</h5>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0"><i class="bi bi-clipboard-check me-2"></i>${activity.name}</h5>
+                                    ${event.creator_id == (state.currentUser?.id || 0) ?
+                                        `<button class="btn btn-outline-primary btn-sm edit-activity" data-id="${activity.id}">
+                                            <i class="bi bi-pencil me-1"></i>Edit
+                                        </button>` : ''
+                                    }
+                                </div>
                                 <p class="card-text"><i class="bi bi-card-text me-1"></i>${activity.description || 'No description'}</p>
                                 <p class="card-text"><i class="bi bi-calendar-date me-1"></i>Date: ${new Date(activity.activity_date).toLocaleDateString()}</p>
+                                <p class="card-text"><i class="bi bi-people me-1"></i>Leaders: ${
+                                    activity.leaders && activity.leaders.length > 0
+                                        ? activity.leaders.map(leader => leader.name).join(', ')
+                                        : 'No leaders assigned'
+                                }</p>
                                 <p class="card-text"><i class="bi bi-award me-1"></i>Score Categories: ${
                                     activity.score_categories && activity.score_categories.length > 0
                                         ? activity.score_categories.map(cat => `${cat.name} (${cat.max_score} pts)`).join(', ')
@@ -176,6 +188,16 @@ async function showEventDetails(eventId) {
             if (editButton) {
                 editButton.addEventListener('click', () => showEditEventForm(eventId));
             }
+        }
+
+        // Add edit activity event listeners
+        if (event.creator_id == (state.currentUser?.id || 0)) {
+            document.querySelectorAll('.edit-activity').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const activityId = e.target.closest('button').dataset.id;
+                    window.showEditActivityForm(activityId);
+                });
+            });
         }
 
         // Back to events button

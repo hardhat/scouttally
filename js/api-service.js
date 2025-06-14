@@ -117,18 +117,18 @@ const ApiService = {
     },
     
     // Activity API endpoints
-    async getActivity(id) {
-        return this.fetchApi(`activity.php?id=${id}`);
-    },
-    
     async createActivity(activityData) {
         return this.fetchApi('activity.php', 'POST', activityData);
     },
     
-    async updateActivity(id, activityData) {
-        return this.fetchApi(`activity.php?id=${id}`, 'PUT', activityData);
+    async updateActivity(activityId, activityData) {
+        return await this.fetchApi(`activity.php?id=${activityId}`, 'PUT', activityData);
     },
-    
+
+    async getActivity(activityId) {
+        return await this.fetchApi(`activity.php?id=${activityId}`);
+    },
+
     async deleteActivity(id) {
         return this.fetchApi(`activity.php?id=${id}`, 'DELETE');
     },

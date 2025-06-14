@@ -147,78 +147,50 @@ class ActivityApi extends BaseApi {
     }
     
     private function updateActivity($id) {
-        // Check if activity exists
-        $stmt = $this->conn->prepare("SELECT event_id FROM activities WHERE id = ?");
+        if (!$this->validateRequiredParams(['name', 'activity_date'])) {
+            return;
+        }
+
+        // Check if user has permission to update this activity
+        $stmt = $this->conn->prepare("
+            SELECT e.creator_id 
+            FROM activities a 
+            JOIN events e ON a.event_id = e.id 
+            WHERE a.id = ?
+        ");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($result->num_rows === 0) {
             $this->sendError("Activity not found", 404);
             return;
         }
-        
+
         $activity = $result->fetch_assoc();
-        $eventId = $activity['event_id'];
-        
-        // Check if user is authorized (creator of the event)
-        $stmt = $this->conn->prepare("SELECT creator_id FROM events WHERE id = ?");
-        $stmt->bind_param("i", $eventId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows === 0) {
-            $this->sendError("Event not found", 404);
+        if ($activity['creator_id'] !== $this->getCurrentUserId()) {
+            $this->sendError("Unauthorized to update this activity", 403);
             return;
         }
-        
-        $event = $result->fetch_assoc();
-        $currentUserId = $this->getCurrentUserId();
-        
-        if ($event['creator_id'] != $currentUserId) {
-            $this->sendError("Not authorized to update this activity", 403);
-            return;
-        }
-        
-        // Build update query based on provided parameters
-        $updateFields = [];
-        $types = "";
-        $values = [];
-        
-        if (isset($this->params['name'])) {
-            $updateFields[] = "name = ?";
-            $types .= "s";
-            $values[] = $this->params['name'];
-        }
-        
-        if (isset($this->params['description'])) {
-            $updateFields[] = "description = ?";
-            $types .= "s";
-            $values[] = $this->params['description'];
-        }
-        
-        if (isset($this->params['activity_date'])) {
-            $updateFields[] = "activity_date = ?";
-            $types .= "s";
-            $values[] = $this->params['activity_date'];
-        }
-        
-        if (empty($updateFields)) {
-            $this->sendError("No fields to update", 400);
-            return;
-        }
-        
-        $sql = "UPDATE activities SET " . implode(", ", $updateFields) . " WHERE id = ?";
-        $types .= "i";
-        $values[] = $id;
-        
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param($types, ...$values);
-        
+
+        // Update activity
+        $stmt = $this->conn->prepare("
+            UPDATE activities 
+            SET name = ?, description = ?, activity_date = ?
+            WHERE id = ?
+        ");
+
+        $name = $this->params['name'];
+        $description = $this->params['description'] ?? '';
+        $activityDate = $this->params['activity_date'];
+
+        $stmt->bind_param("sssi", $name, $description, $activityDate, $id);
+
         if ($stmt->execute()) {
-            $this->sendResponse(['message' => 'Activity updated successfully']);
+            // Get updated activity details
+            $this->getActivity($id);
         } else {
-            $this->sendError("Database error: " . $this->conn->error, 500);
+            $this->sendError("Failed to update activity: " . $this->conn->error, 500);
         }
     }
     
