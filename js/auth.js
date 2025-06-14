@@ -1,7 +1,9 @@
 // User registration function
 async function registerUser(userData) {
     try {
+        console.log('Attempting to register user:', { ...userData, password: '[REDACTED]' });
         const result = await ApiService.register(userData);
+        console.log('Registration successful:', { ...result, token: '[REDACTED]' });
         // Store user in session storage
         sessionStorage.setItem('currentUser', JSON.stringify(result));
         state.currentUser = result;
@@ -9,6 +11,10 @@ async function registerUser(userData) {
         return result;
     } catch (error) {
         console.error('Registration error:', error);
+        // Don't show session expired for registration
+        if (error.message === 'Session expired') {
+            return ApiService.register(userData);
+        }
         throw error;
     }
 }
@@ -16,7 +22,9 @@ async function registerUser(userData) {
 // User login function
 async function loginUser(credentials) {
     try {
+        console.log('Attempting to login user:', { ...credentials, password: '[REDACTED]' });
         const result = await ApiService.login(credentials);
+        console.log('Login successful:', { ...result, token: '[REDACTED]' });
         // Store user in session storage
         sessionStorage.setItem('currentUser', JSON.stringify(result));
         state.currentUser = result;
@@ -24,6 +32,10 @@ async function loginUser(credentials) {
         return result;
     } catch (error) {
         console.error('Login error:', error);
+        // Don't show session expired for login
+        if (error.message === 'Session expired') {
+            return ApiService.login(credentials);
+        }
         throw error;
     }
 }

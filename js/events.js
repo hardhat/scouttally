@@ -161,11 +161,17 @@ async function showEventDetails(eventId) {
                                 </div>
                                 <p class="card-text"><i class="bi bi-card-text me-1"></i>${activity.description || 'No description'}</p>
                                 <p class="card-text"><i class="bi bi-calendar-date me-1"></i>Date: ${new Date(activity.activity_date).toLocaleDateString()}</p>
-                                <p class="card-text"><i class="bi bi-people me-1"></i>Leaders: ${
-                                    activity.leaders && activity.leaders.length > 0
-                                        ? activity.leaders.map(leader => leader.name).join(', ')
-                                        : 'No leaders assigned'
-                                }</p>
+                                <p class="card-text">
+                                    <i class="bi bi-people me-1"></i>Leaders: 
+                                    ${activity.leaders && activity.leaders.length > 0
+                                        ? `<span class="text-primary">${activity.leaders.map(leader => leader.name).join(', ')}</span>`
+                                        : '<span class="text-muted">No leaders assigned</span>'
+                                    }
+                                    ${activity.leader_count > 0 ? 
+                                        `<span class="badge bg-primary ms-2">${activity.leader_count} ${activity.leader_count === 1 ? 'leader' : 'leaders'}</span>` 
+                                        : ''
+                                    }
+                                </p>
                                 <p class="card-text"><i class="bi bi-award me-1"></i>Score Categories: ${
                                     activity.score_categories && activity.score_categories.length > 0
                                         ? activity.score_categories.map(cat => `${cat.name} (${cat.max_score} pts)`).join(', ')
