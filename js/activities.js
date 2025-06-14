@@ -72,6 +72,23 @@ async function showAddActivityForm(eventId) {
                                     </div>
                                 </div>
 
+                                <div class="mb-3">
+                                    <label class="form-label"><i class="bi bi-people me-1"></i>Activity Leaders</label>
+                                    <div id="activity-leaders" class="mb-2">
+                                        <!-- Leaders will be added here -->
+                                    </div>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="leader-search" 
+                                               placeholder="Search users by name or email">
+                                        <button class="btn btn-outline-secondary" type="button" id="add-leader">
+                                            <i class="bi bi-plus-circle me-1"></i>Add Leader
+                                        </button>
+                                    </div>
+                                    <div id="leader-search-results" class="list-group mt-2" style="display: none;">
+                                        <!-- Search results will appear here -->
+                                    </div>
+                                </div>
+
                                 <div class="d-flex justify-content-between">
                                     <button type="button" class="btn btn-secondary" id="cancel-add-activity">
                                         <i class="bi bi-x-circle me-1"></i>Cancel
@@ -145,6 +162,72 @@ async function showAddActivityForm(eventId) {
             window.showEventDetails(eventId);
         });
 
+        // Activity leader management
+        const selectedLeaders = new Set();
+        const leaderSearchInput = document.getElementById('leader-search');
+        const leaderSearchResults = document.getElementById('leader-search-results');
+        const activityLeaders = document.getElementById('activity-leaders');
+
+        let searchTimeout;
+        leaderSearchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            const query = leaderSearchInput.value.trim();
+            
+            if (query.length < 2) {
+                leaderSearchResults.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const users = await ApiService.searchUsers(query);
+                    leaderSearchResults.innerHTML = users
+                        .filter(user => !selectedLeaders.has(user.id))
+                        .map(user => `
+                            <button type="button" class="list-group-item list-group-item-action"
+                                    data-user-id="${user.id}" data-user-name="${user.name}">
+                                <i class="bi bi-person me-2"></i>${user.name} (${user.email})
+                            </button>
+                        `).join('');
+                    leaderSearchResults.style.display = users.length > 0 ? 'block' : 'none';
+                } catch (error) {
+                    console.error('Error searching users:', error);
+                }
+            }, 300);
+        });
+
+        leaderSearchResults.addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+
+            const userId = button.dataset.userId;
+            const userName = button.dataset.userName;
+
+            if (!selectedLeaders.has(userId)) {
+                selectedLeaders.add(userId);
+                const leaderElement = document.createElement('div');
+                leaderElement.className = 'selected-leader d-flex align-items-center mb-2';
+                leaderElement.innerHTML = `
+                    <span class="me-2"><i class="bi bi-person-check"></i> ${userName}</span>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-user-id="${userId}">
+                        <i class="bi bi-x"></i>
+                    </button>
+                `;
+                activityLeaders.appendChild(leaderElement);
+                leaderSearchInput.value = '';
+                leaderSearchResults.style.display = 'none';
+            }
+        });
+
+        activityLeaders.addEventListener('click', (e) => {
+            const removeButton = e.target.closest('button');
+            if (!removeButton) return;
+
+            const userId = removeButton.dataset.userId;
+            selectedLeaders.delete(userId);
+            removeButton.closest('.selected-leader').remove();
+        });
+
         // Form submission
         document.getElementById('add-activity-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -207,7 +290,15 @@ async function showAddActivityForm(eventId) {
                 };
 
                 const newActivity = await ApiService.createActivity(activityData);
-                ApiService.showNotification('Success', 'Activity added successfully!', 'success');
+                
+                // Assign selected leaders
+                const leaderPromises = Array.from(selectedLeaders).map(userId => 
+                    ApiService.assignActivityLeader(newActivity.id, userId)
+                );
+                
+                await Promise.all(leaderPromises);
+                
+                ApiService.showNotification('Success', 'Activity and leaders added successfully!', 'success');
                 window.showEventDetails(eventId);
             } catch (error) {
                 // Error is already handled by the API service

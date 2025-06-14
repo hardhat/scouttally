@@ -50,28 +50,81 @@ class BaseApi {
     }
     
     protected function isAuthorized() {
-        // Simple token-based auth (in a real app, use JWT or similar)
         $headers = getallheaders();
         if (!isset($headers['Authorization'])) {
             return false;
         }
-        
-        $token = str_replace('Bearer ', '', $headers['Authorization']);
-        
-        // Validate token (simplified for example)
-        $stmt = $this->conn->prepare("SELECT id FROM users WHERE id = ?");
-        $userId = $this->getUserIdFromToken($token);
-        $stmt->bind_param("i", $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        return $result->num_rows > 0;
+
+        $auth = $headers['Authorization'];
+        if (!str_starts_with($auth, 'Bearer ')) {
+            return false;
+        }
+
+        $token = substr($auth, 7); // Remove 'Bearer ' prefix
+        return $this->validateToken($token);
+    }
+
+    protected function validateToken($token) {
+        try {
+            $decoded = base64_decode($token);
+            if ($decoded === false) {
+                return false;
+            }
+
+            $parts = explode('.', $decoded);
+            if (count($parts) !== 2) {
+                return false;
+            }
+
+            $payload = json_decode($parts[0], true);
+            if (!$payload || !isset($payload['user_id']) || !isset($payload['expires_at'])) {
+                return false;
+            }
+
+            // Check if token has expired
+            if ($payload['expires_at'] < time()) {
+                return false;
+            }
+
+            // Verify signature
+            $secret = defined('JWT_SECRET') ? JWT_SECRET : 'default_secret_change_this';
+            $expectedHash = hash_hmac('sha256', $parts[0], $secret);
+            if (!hash_equals($expectedHash, $parts[1])) {
+                return false;
+            }
+
+            // Check if user exists and is active
+            $stmt = $this->conn->prepare("SELECT id FROM users WHERE id = ?");
+            $stmt->bind_param("i", $payload['user_id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            return $result->num_rows > 0;
+        } catch (Exception $e) {
+            return false;
+        }
     }
     
     protected function getUserIdFromToken($token) {
-        // In a real app, decode and validate JWT
-        // This is a simplified example
-        return intval($token);
+        try {
+            $decoded = base64_decode($token);
+            if ($decoded === false) {
+                return null;
+            }
+
+            $parts = explode('.', $decoded);
+            if (count($parts) !== 2) {
+                return null;
+            }
+
+            $payload = json_decode($parts[0], true);
+            if (!$payload || !isset($payload['user_id'])) {
+                return null;
+            }
+
+            return $payload['user_id'];
+        } catch (Exception $e) {
+            return null;
+        }
     }
     
     protected function getCurrentUserId() {
@@ -80,7 +133,12 @@ class BaseApi {
             return null;
         }
         
-        $token = str_replace('Bearer ', '', $headers['Authorization']);
+        $auth = $headers['Authorization'];
+        if (!str_starts_with($auth, 'Bearer ')) {
+            return null;
+        }
+
+        $token = substr($auth, 7); // Remove 'Bearer ' prefix
         return $this->getUserIdFromToken($token);
     }
 }

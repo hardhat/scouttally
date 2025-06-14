@@ -153,5 +153,26 @@ const ApiService = {
     
     async getOverallRankings() {
         return this.fetchApi('rankings.php');
+    },
+    
+    // Activity leader management
+    async getActivityLeaders(activityId) {
+        return await this.fetchApi(`activity_leader.php?activity_id=${activityId}`);
+    },
+
+    async assignActivityLeader(activityId, userId) {
+        return await this.fetchApi('activity_leader.php', 'POST', {
+            activity_id: activityId,
+            user_id: userId
+        });
+    },
+
+    async removeActivityLeader(leaderId) {
+        return await this.fetchApi(`activity_leader.php?id=${leaderId}`, 'DELETE');
+    },
+
+    // Search users (for leader assignment)
+    async searchUsers(query) {
+        return await this.fetchApi(`user.php?search=${encodeURIComponent(query)}`);
     }
 };

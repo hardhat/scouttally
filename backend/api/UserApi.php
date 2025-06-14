@@ -4,6 +4,13 @@ require_once 'BaseApi.php';
 class UserApi extends BaseApi {
     public function processRequest() {
         switch ($this->requestMethod) {
+            case 'GET':
+                if (isset($this->params['search'])) {
+                    $this->searchUsers($this->params['search']);
+                } else {
+                    $this->sendError("Search parameter is required", 400);
+                }
+                break;
             case 'POST':
                 if (isset($this->params['action'])) {
                     if ($this->params['action'] === 'register') {
@@ -100,9 +107,43 @@ class UserApi extends BaseApi {
             'issued_at' => time(),
             'expires_at' => time() + (defined('SESSION_TIMEOUT') ? SESSION_TIMEOUT : 3600)
         ];
+        // Log the payload for debugging
+        error_log("Generating token for user ID $userId: " . json_encode($payload));
 
         $secret = defined('JWT_SECRET') ? JWT_SECRET : 'default_secret_change_this';
         return base64_encode(json_encode($payload) . '.' . hash_hmac('sha256', json_encode($payload), $secret));
+    }
+
+    private function searchUsers($query) {
+        // Require authentication for user search
+        if (!$this->isAuthorized()) {
+            $this->sendError("Unauthorized", 401);
+            return;
+        }
+
+        $searchTerm = "%$query%";
+        $sql = "SELECT id, name, email FROM users 
+                WHERE name LIKE ? OR email LIKE ? 
+                ORDER BY name 
+                LIMIT 10";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("ss", $searchTerm, $searchTerm);
+        
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            $users = [];
+            while ($row = $result->fetch_assoc()) {
+                $users[] = [
+                    'id' => $row['id'],
+                    'name' => $row['name'],
+                    'email' => $row['email']
+                ];
+            }
+            $this->sendResponse($users);
+        } else {
+            $this->sendError("Failed to search users", 500);
+        }
     }
 }
 ?>
