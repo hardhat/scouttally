@@ -26,6 +26,29 @@ function getAvatarColor(userId) {
     return avatarColors[userId % avatarColors.length];
 }
 
+// Helper function to format date
+function formatDate(dateString) {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+}
+
+// Helper function to get user's next event
+async function getNextUserEvent() {
+    if (!state.currentUser) return null;
+    
+    try {
+        const response = await ApiService.getUserEvents();
+        const now = new Date();
+        
+        return response.events
+            .filter(event => new Date(event.end_date) >= now)
+            .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))[0];
+    } catch (error) {
+        console.error('Error fetching user events:', error);
+        return null;
+    }
+}
+
 // DOM elements
 const mainContent = document.getElementById('main-content');
 
@@ -131,26 +154,101 @@ function updateNavigation(isLoggedIn) {
 }
 
 // Page rendering functions
-function showHomePage() {
+async function showHomePage() {
+    // Show loading state first
     mainContent.innerHTML = `
-        <div class="jumbotron">
+        <div class="jumbotron mb-4">
             <h1><i class="bi bi-trophy-fill text-warning me-3"></i>Welcome to EventScore</h1>
             <p class="lead"><i class="bi bi-calendar-check me-2"></i>Create and manage multi-day events with scored activities</p>
-            ${!state.currentUser ?
-                `<button class="btn btn-primary btn-lg" id="get-started">
-                    <i class="bi bi-rocket-takeoff me-2"></i>Get Started
-                </button>` :
-                `<button class="btn btn-success btn-lg" id="create-event">
-                    <i class="bi bi-plus-circle me-2"></i>Create New Event
-                </button>`
-            }
+            <div id="home-content">
+                ${!state.currentUser ? 
+                    `<button class="btn btn-primary btn-lg" id="get-started">
+                        <i class="bi bi-rocket-takeoff me-2"></i>Get Started
+                    </button>` :
+                    `<div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>`
+                }
+            </div>
         </div>
     `;
-    
+
     if (!state.currentUser) {
-        document.getElementById('get-started').addEventListener('click', window.showRegistrationForm);
-    } else {
-        document.getElementById('create-event').addEventListener('click', window.showCreateEventForm);
+        document.getElementById('get-started').addEventListener('click', () => {
+            window.showRegistrationForm();
+        });
+        return;
+    }
+
+    try {
+        const nextEvent = await getNextUserEvent();
+        const homeContent = document.getElementById('home-content');
+
+        homeContent.innerHTML = `
+            <div class="row mt-4">
+                <div class="col-12">
+                    ${nextEvent ? `
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h3 class="card-title mb-0">
+                                    <i class="bi bi-calendar-event me-2"></i>Your Next Event
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <h4 class="card-title">${nextEvent.name}</h4>
+                                <p class="card-text">
+                                    <i class="bi bi-calendar-range me-2"></i>
+                                    ${formatDate(nextEvent.start_date)} - ${formatDate(nextEvent.end_date)}
+                                </p>
+                                <p class="card-text">
+                                    <i class="bi bi-person-badge me-2"></i>
+                                    ${nextEvent.is_creator ? 
+                                        '<span class="badge bg-success me-2">Event Creator</span>' : ''}
+                                    ${nextEvent.is_leader ? 
+                                        '<span class="badge bg-info">Activity Leader</span>' : ''}
+                                </p>
+                                <div class="mt-3">
+                                    <button class="btn btn-primary me-2" onclick="window.showEventsPage('${nextEvent.id}')">
+                                        <i class="bi bi-eye me-2"></i>View Event
+                                    </button>
+                                    <button class="btn btn-success" id="create-event">
+                                        <i class="bi bi-plus-circle me-2"></i>Create New Event
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="text-center">
+                            <p class="lead">You don't have any upcoming events.</p>
+                            <button class="btn btn-success btn-lg" id="create-event">
+                                <i class="bi bi-plus-circle me-2"></i>Create New Event
+                            </button>
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+
+        // Add event listener for create event button
+        document.getElementById('create-event')?.addEventListener('click', () => {
+            if (typeof window.showCreateEventForm === 'function') {
+                window.showCreateEventForm();
+            }
+        });
+    } catch (error) {
+        console.error('Error loading home page:', error);
+        const homeContent = document.getElementById('home-content');
+        homeContent.innerHTML = `
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Error loading your events. Please try again later.
+            </div>
+            <button class="btn btn-success" id="create-event">
+                <i class="bi bi-plus-circle me-2"></i>Create New Event
+            </button>
+        `;
     }
 }
 

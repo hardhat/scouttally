@@ -10,8 +10,8 @@ async function fetchEvents() {
     }
 }
 
-// Show events page
-async function showEventsPage() {
+// Show events page, optionally focusing on a specific event
+async function showEventsPage(eventId = null) {
     mainContent.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2><i class="bi bi-calendar-event me-2"></i>Events</h2>
@@ -48,8 +48,8 @@ async function showEventsPage() {
         }
         
         eventsContainer.innerHTML = events.map(event => `
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card event-card h-100">
+            <div class="col-md-6 col-lg-4 mb-4" ${eventId === event.id ? 'id="focused-event"' : ''}>
+                <div class="card event-card h-100 ${eventId === event.id ? 'border-primary' : ''}">
                     <div class="card-body">
                         <h5 class="card-title"><i class="bi bi-calendar-event me-2"></i>${event.name}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">

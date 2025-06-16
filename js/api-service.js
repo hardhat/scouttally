@@ -163,6 +163,10 @@ const ApiService = {
     },
     
     // Event API endpoints
+    async getUserEvents() {
+        return this.fetchApi('event.php?user_events=1');
+    },
+    
     async getEvents() {
         return this.fetchApi('event.php');
     },

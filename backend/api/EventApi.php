@@ -12,6 +12,8 @@ class EventApi extends BaseApi {
             case 'GET':
                 if (isset($this->params['id'])) {
                     $this->getEvent($this->params['id']);
+                } elseif (isset($this->params['user_events'])) {
+                    $this->getUserEvents();
                 } else {
                     $this->getAllEvents();
                 }
@@ -254,6 +256,74 @@ class EventApi extends BaseApi {
         } else {
             $this->sendError("Database error: " . $this->conn->error, 500);
         }
+    }
+    
+    private function getUserEvents() {
+        $userId = $this->getCurrentUserId();
+        if (!$userId) {
+            $this->sendError("Unauthorized", 401);
+            return;
+        }
+
+        // Get events where user is either creator or activity leader
+        $sql = "SELECT DISTINCT e.*, u.name as creator_name,
+                (e.creator_id = ?) as is_creator,
+                EXISTS(
+                    SELECT 1 FROM activities a 
+                    JOIN activity_leaders al ON a.id = al.activity_id 
+                    WHERE a.event_id = e.id AND al.user_id = ?
+                ) as is_leader
+                FROM events e
+                JOIN users u ON e.creator_id = u.id
+                LEFT JOIN activities a ON e.id = a.event_id
+                LEFT JOIN activity_leaders al ON a.id = al.activity_id
+                WHERE e.creator_id = ? OR al.user_id = ?
+                ORDER BY e.start_date";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("iiii", $userId, $userId, $userId, $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $events = [];
+        while ($row = $result->fetch_assoc()) {
+            // Get activities for this event
+            $eventId = $row['id'];
+            $activitiesStmt = $this->conn->prepare("
+                SELECT a.*, 
+                    GROUP_CONCAT(
+                        DISTINCT JSON_OBJECT(
+                            'id', u.id,
+                            'name', u.name
+                        )
+                    ) as leaders
+                FROM activities a
+                LEFT JOIN activity_leaders al ON a.id = al.activity_id
+                LEFT JOIN users u ON al.user_id = u.id
+                WHERE a.event_id = ?
+                GROUP BY a.id
+            ");
+            $activitiesStmt->bind_param("i", $eventId);
+            $activitiesStmt->execute();
+            $activitiesResult = $activitiesStmt->get_result();
+            
+            $activities = [];
+            while ($activity = $activitiesResult->fetch_assoc()) {
+                if ($activity['leaders']) {
+                    // Parse the JSON string of leaders into an array
+                    $leadersJson = '[' . str_replace('}{', '},{', $activity['leaders']) . ']';
+                    $activity['leaders'] = json_decode($leadersJson);
+                } else {
+                    $activity['leaders'] = [];
+                }
+                $activities[] = $activity;
+            }
+            
+            $row['activities'] = $activities;
+            $events[] = $row;
+        }
+        
+        $this->sendResponse(['events' => $events]);
     }
 }
 ?>

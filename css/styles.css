@@ -3,9 +3,34 @@
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
+.event-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
 .event-card:hover {
     transform: translateY(-5px);
-    transition: transform 0.3s ease;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+#focused-event {
+    animation: highlight 1s ease-out;
+}
+
+#focused-event .event-card {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(13, 110, 253, 0.2);
+}
+
+@keyframes highlight {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .activity-item {
