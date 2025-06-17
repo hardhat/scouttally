@@ -1,5 +1,6 @@
 <?php
 require_once '../config/database.php';
+require_once 'ScoreApi.php';
 
 // Set CORS headers
 header("Access-Control-Allow-Origin: *");
@@ -16,15 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
     $database = new Database();
     $db = $database->getConnection();
-    
-    // Simple score API placeholder
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        http_response_code(501);
-        echo json_encode(['error' => 'Score API not yet implemented']);
-    } else {
-        http_response_code(405);
-        echo json_encode(['error' => 'Method not allowed']);
-    }
+
+    $scoreApi = new ScoreApi($db);
+    $scoreApi->processRequest();
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['error' => 'Internal server error: ' . $e->getMessage()]);

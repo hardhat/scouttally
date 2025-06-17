@@ -214,6 +214,30 @@ const ApiService = {
     },
     
     // Score API endpoints
+    async getEventTeams(eventId) {
+        return this.fetchApi('score.php', 'POST', { action: 'get_event_teams', event_id: eventId });
+    },
+
+    async addTeam(eventId, teamName) {
+        return this.fetchApi('score.php', 'POST', { action: 'add_team', event_id: eventId, name: teamName });
+    },
+
+    async getActivityForScoring(activityId) {
+        return this.fetchApi('score.php', 'POST', { action: 'get_activity_for_scoring', activity_id: activityId });
+    },
+
+    async submitScore(activityId, teamId, categoryId, scoreValue, notes = '') {
+        return this.fetchApi('score.php', 'POST', {
+            action: 'submit_score',
+            activity_id: activityId,
+            team_id: teamId,
+            category_id: categoryId,
+            score_value: scoreValue,
+            notes: notes
+        });
+    },
+
+    // Legacy method for backward compatibility
     async addScore(scoreData) {
         return this.fetchApi('score.php', 'POST', scoreData);
     },

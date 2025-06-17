@@ -44,13 +44,16 @@ CREATE TABLE IF NOT EXISTS score_categories (
     FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
 );
 
--- Teams table
+-- Teams table (event-specific teams)
 CREATE TABLE IF NOT EXISTS teams (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     created_by INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    UNIQUE KEY unique_team_per_event (event_id, name)
 );
 
 -- Activity leaders table
@@ -75,8 +78,23 @@ CREATE TABLE IF NOT EXISTS scores (
     score_value DECIMAL(5,2) NOT NULL,
     scored_by INT NOT NULL,
     scored_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
     FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE,
-    FOREIGN KEY (team_id) REFERENCES teams(id),
-    FOREIGN KEY (category_id) REFERENCES score_categories(id),
-    FOREIGN KEY (scored_by) REFERENCES users(id)
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES score_categories(id) ON DELETE CASCADE,
+    FOREIGN KEY (scored_by) REFERENCES users(id),
+    UNIQUE KEY unique_team_category_score (activity_id, team_id, category_id),
+    INDEX idx_activity_scores (activity_id),
+    INDEX idx_team_scores (team_id),
+    INDEX idx_scored_by (scored_by)
 );
+
+-- Add useful indexes for better performance
+CREATE INDEX idx_events_creator ON events(creator_id);
+CREATE INDEX idx_events_dates ON events(start_date, end_date);
+CREATE INDEX idx_activities_event ON activities(event_id);
+CREATE INDEX idx_activities_date ON activities(activity_date);
+CREATE INDEX idx_score_categories_activity ON score_categories(activity_id);
+CREATE INDEX idx_activity_leaders_activity ON activity_leaders(activity_id);
+CREATE INDEX idx_activity_leaders_user ON activity_leaders(user_id);
+CREATE INDEX idx_teams_event ON teams(event_id);

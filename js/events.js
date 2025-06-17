@@ -178,6 +178,13 @@ async function showEventDetails(eventId) {
                                         : 'None defined'
                                 }</p>
                             </div>
+                            ${(event.creator_id == (state.currentUser?.id || 0)) || (activity.is_leader) ?
+                                `<div class="card-footer">
+                                    <button class="btn btn-sm btn-success score-activity" data-activity-id="${activity.id}">
+                                        <i class="bi bi-calculator me-1"></i>Score Teams
+                                    </button>
+                                </div>` : ''
+                            }
                         </div>
                     `).join('')
                     : '<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No activities found. Add your first activity!</div>'
@@ -205,6 +212,14 @@ async function showEventDetails(eventId) {
                 });
             });
         }
+
+        // Add score activity event listeners
+        document.querySelectorAll('.score-activity').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const activityId = e.target.closest('button').dataset.activityId;
+                showActivityScoringPage(activityId);
+            });
+        });
 
         // Back to events button
         document.getElementById('back-to-events').addEventListener('click', showEventsPage);
